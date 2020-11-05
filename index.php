@@ -17,6 +17,15 @@
 
 <?php
 
+/*
+ * get period var fro URL if available
+ */
+if(isset($_GET['period'])) {
+    $period = $_GET['period'];
+} else {
+    $period = 24; //default: 24 hours
+}
+
 //realtime data
 ob_start();
 passthru('python /var/www/bme280.py');
@@ -46,7 +55,8 @@ $dateArray = array();
 $humidityArray = array();
 $pressureArray = array();
 
-$stmt = $pdo->query('SELECT * FROM (SELECT * FROM sensordata ORDER BY id DESC LIMIT 576) sub ORDER BY id ASC');
+$stmt = $pdo->prepare('SELECT * FROM (SELECT * FROM sensordata WHERE created > DATE_SUB(NOW(), INTERVAL ? HOUR)) sub ORDER BY id ASC');
+$stmt->execute([$period]);
 foreach ($stmt as $row)  {
     $temperatureArray[] = $row['temperature'];
     $dateArray[] = $row['created'];
@@ -54,6 +64,14 @@ foreach ($stmt as $row)  {
     $pressureArray[] = $row['pressure'];
 }
 ?>
+<div class="col-12">
+    <a href="index.php?period=12" class="btn <?php if($period == 12) {echo "btn-primary"; } else { echo "btn-secondary"; } ?>">12h</a>
+    <a href="index.php?period=24" class="btn  <?php if($period == 24) {echo "btn-primary"; } else { echo "btn-secondary"; } ?>">24h</a>
+    <a href="index.php?period=48" class="btn  <?php if($period == 48) {echo "btn-primary"; } else { echo "btn-secondary"; } ?>">48h</a>
+    <a href="index.php?period=168" class="btn  <?php if($period == 168) {echo "btn-primary"; } else { echo "btn-secondary"; } ?>">7 Tage</a>
+    <a href="index.php?period=336" class="btn  <?php if($period == 336) {echo "btn-primary"; } else { echo "btn-secondary"; } ?>">14 Tage</a>
+
+</div>
 
 
 <canvas id="myChart" width="800" height="200"></canvas>
